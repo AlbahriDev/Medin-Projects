@@ -1,0 +1,27 @@
+name: Upload to Cloudflare R2
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  upload:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Install rclone
+        run: |
+          curl https://rclone.org/install.sh | sudo bash
+          
+      - name: Configure rclone for R2
+        run: |
+          rclone config create myr2 s3 \
+            provider Cloudflare \
+            access_key_id ${{ secrets.R2_ACCESS_KEY_ID }} \
+            secret_access_key ${{ secrets.R2_SECRET_ACCESS_KEY }} \
+            endpoint https://${{ secrets.CLOUDFLARE_ACCOUNT_ID }}.r2.cloudflarestorage.com
+          
+      - name: Upload files to R2
+        run: |
+          rclone sync ./ myr2:${{ secrets.R2_BUCKET_NAME }} --progress
